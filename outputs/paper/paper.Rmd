@@ -1,0 +1,86 @@
+---
+title: "Investigating Canadian sleeping trends"
+subtitle: ""
+author: 
+  - Pascal Lee Slew
+thanks: "Code and data are available at: https://github.com/Pascal-304/canadian-sleep-2018."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "Sleep has become a luxury in modern times. There is only a limited time for so many things to do. The Canadian Community Health Survey (CCHS), a joint initiative of Health Canada, the Public Health Agency of Canada, Statistics Canada and Canadian Institute for Health Information (CIHI), provides information on a broad range of topics around Canadians health lifestyles. In this paper, we used the 2017-2018 CCHS to focus on the sleeping trends and the factors affecting them. We found that a significant number of canadians have difficulty sleeping. There are also noticeable differences in sleeping hours among age groups which denote potentially some sort of social trend. The analysis of sleeping data is important to get an insight of the current situation and identify ways to help Canadians live a better life. \\par\\textbf{keywords:} sleep, canadian community health survey, sleep deficiency, age"
+
+
+output:
+  bookdown::pdf_document2
+toc: FALSE
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+# libraries setup
+library(tidyverse)
+library(kableExtra)
+```
+
+
+
+# Introduction
+
+Sleep is important for our health. In today's world, there are so much things we have or want to do but we only have 24 hours a day. Often, people reduce their sleeping hours for other priorities with the belief that the benefits outweigh the costs. This is particularly the case for many university students who are willing to sacrifice their sleep to study or complete assignments. Failing to get enough sleep over time can lead to other health complications. Therefore, having an idea of the current sleep habits of Canadians is important to formulate policies and implement programs to improve the situation of Canadians.  
+
+The Canadian Community Health Survey (CCHS) has been set up with the objective of collecting health-related data on Canadians. With the collected data, analysis can be conducted to identify any worrying trends and relay crucial information to the stakeholders. 
+
+In this paper, we seek to investigate the sleeping trends of Canadians. We will be looking at the demographics and other factors such as having a baby or drinking first. Then, we will proceed by building a linear mixed model with sleeping hours as the response and age group, baby, diabetes, cholesterol among other predictors. We found that ...
+
+
+
+The remaining part of the paper is divided as follows: Section \@ref(data) explains where our data comes from and gives a general idea of the variables present in the dataset. Section \@ref(model) shows the model that explains how canadian sleeping is influenced. Section \@ref(results) explains the key findings of the data analysis and model. Section \@ref(discussion) expands on what is found and why it is important. Section \@ref(appendix) contains supplementary graphs that support the arguments in the discussion section.
+
+
+
+# Data
+
+## Data Source
+
+ In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever
+
+
+
+# Model
+
+
+
+
+# Results
+
+# Discussion
+
+## First discussion point
+
+
+## Second discussion point
+
+## Third discussion point
+
+## Weaknesses and next steps
+
+
+\newpage
+
+\appendix
+
+# Appendix {-}
+
+
+# Additional details
+
+
+\newpage
+
+
+# References
+
+
