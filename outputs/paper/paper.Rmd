@@ -5,7 +5,7 @@ author:
   - Pascal Lee Slew
 thanks: "Code and data are available at: https://github.com/Pascal-304/canadian-sleep-2018."
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "Sleep has become a luxury in modern times. There is only a limited time for so many things to do. The Canadian Community Health Survey (CCHS), a joint initiative of Health Canada, the Public Health Agency of Canada, Statistics Canada and Canadian Institute for Health Information (CIHI), provides information on a broad range of topics around Canadians health lifestyles. In this paper, we used the 2017-2018 CCHS to focus on the sleeping trends and the factors affecting them. We found that a significant number of canadians have difficulty sleeping. There are also noticeable differences in sleeping hours among age groups which denote potentially some sort of social trend. The analysis of sleeping data is important to get an insight of the current situation and identify ways to help Canadians live a better life. \\par\\textbf{keywords:} sleep, canadian community health survey, sleep deficiency, age"
+abstract: "Sleep has become a luxury in modern times. There is only a limited time for so many things to do. In this paper, we used the 2017-2018 CCHS to focus on the sleeping trends and the factors affecting them. We found that a significant number of canadians have difficulty sleeping. There are also noticeable differences in sleeping hours among age groups which denote potentially some sort of social trend. The analysis of sleeping data is important to get an insight of the current situation and identify ways to help Canadians live a better life. \\par\\textbf{keywords:} sleep, canadian community health survey, sleep deficiency, age"
 
 
 output:
@@ -23,6 +23,9 @@ knitr::opts_chunk$set(echo = TRUE)
 # libraries setup
 library(tidyverse)
 library(kableExtra)
+library(forcats)
+library(lme4)
+library(lmtest)
 ```
 
 
@@ -33,11 +36,13 @@ Sleep is important for our health. In today's world, there are so much things we
 
 The Canadian Community Health Survey (CCHS) has been set up with the objective of collecting health-related data on Canadians. With the collected data, analysis can be conducted to identify any worrying trends and relay crucial information to the stakeholders. 
 
+The Canadian Community Health Survey (CCHS), a joint initiative of Health Canada, the Public Health Agency of Canada, Statistics Canada and Canadian Institute for Health Information (CIHI), provides information on a broad range of topics around Canadians health lifestyles. 
+
 In this paper, we seek to investigate the sleeping trends of Canadians. We will be looking at the demographics and other factors such as having a baby or drinking first. Then, we will proceed by building a linear mixed model with sleeping hours as the response and age group, baby, diabetes, cholesterol among other predictors. We found that ...
 
 
 
-The remaining part of the paper is divided as follows: Section \@ref(data) explains where our data comes from and gives a general idea of the variables present in the dataset. Section \@ref(model) shows the model that explains how canadian sleeping is influenced. Section \@ref(results) explains the key findings of the data analysis and model. Section \@ref(discussion) expands on what is found and why it is important. Section \@ref(appendix) contains supplementary graphs that support the arguments in the discussion section.
+The remaining part of the paper is divided as follows: Section \@ref(data) explains where our data comes from and gives a general idea of the variables present in the dataset. Section \@ref(model) shows the model that explains how Canadian sleeping is influenced. Section \@ref(results) explains the key findings of the data analysis and model. Section \@ref(discussion) expands on what is found and why it is important. Section \@ref(appendix) contains supplementary graphs that support the arguments in the discussion section.
 
 
 
@@ -45,20 +50,427 @@ The remaining part of the paper is divided as follows: Section \@ref(data) expla
 
 ## Data Source
 
- In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever
+This paper uses a subset of the Canadian Community Health Survey 2017-2018 data [ citation of source].  
+
+ In paper we run our analysis in `R` [@citeR]. 
+
+## Methodology
+
+The Canadian Community Health Survey is a national-level survey carried out in Canada. It was conducted by 
+
+The survey frame
+respondents eligible for the survey were of age 12 and over in the ten provinces.
+
+The target sample size was about 130,000 respondents to obtain reliable estimates for each Health regions. A minimum of 500 respondents is needed for each HR for attaining a reasonable level of data quality. A restriction of maximum sampling fraction of 1 out of 20 dwellings was imposed to prevent sampling too many dwellings in smaller regions.
+
+The CCHS sample is selected using different frames according to the age group. For the adult population, the sample of households is selected from an area frame while for the young population, a list frame is used to select persons.
+
+The area frame used by the Canadian Labour Force Survey(LFS) is used as a sampling frame for the adult population. It uses a two-stage sample design. In the first stage, a sample of primary sampling units(PSUs), corresponding to geographical regions called clusters, is selected. In each selected PSU, a sample of dwelling is drawn at the second-stage. The clusters are formed of 100 to 600 dwellings generally.
+
+For the youth population, a list frame created from the Canadian Child Benefit (CCB) files is used. The files contain address and phone numbers which are used to conduct phone interviews.
+
+The initial sample size for each frame is collected over a period of 3 months 4 times.
+
+
+
+## Key features
+
+The dataset used has been 
+
+```{r, echo = FALSE, message = FALSE}
+# read in data
+data <- read_csv("cchs_data1.csv")
+
+# remove missing sleep data
+data <- data %>% 
+  filter(!is.na(num_hrs_sleep))
+```
+
+
+```{r data, echo = FALSE}
+# overview of dataset
+data %>% 
+  select(age, marital_status, sex, num_hrs_sleep, perceived_health, per_mental_health) %>% 
+  slice(1:10) %>% 
+  kable(caption = "An overview of key variables of the dataset",
+        col.names = c("Age", "Marital Status", "Sex", "Sleep hours", "Perceived Health", "Perceived Mental Health"),
+        booktabs = TRUE,
+        linesep = "",
+        align = c("l", "c", "c", "c", "c", "c")) %>% 
+  kable_styling(latex_options = "scale_down")
+```
+
+This survey contains a total of 1,051 variables and 113,290 observations.Since the survey has 
+
+This report will focus on a subset of variables that will be used to analyze the relationships of the number of hours usually spent sleeping with different variables such as perceived mental health, life satisfaction, and work stress. Table \@ref(tab:data) shows a subset of key variables that will be discussed in this paper.
+
+
+```{r agegroup, fig.cap = "Distribution of survey respondents by age group and sex",echo = FALSE}
+# age of respondents
+data %>% 
+  ggplot(aes(x = age, fill = sex)) +
+  geom_bar(position = "dodge") +
+  labs(x = "age group",
+       y = "number of respondents") +
+  coord_flip() +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+Figure \@ref(fig:agegroup) shows the age distribution of the respondents. For all age groups, there seems to be a higher number of female adult respondents than male respondents. The converse is true for the youth population; there is higher male respondents than female. About 53.7% of respondents are female and 46.3% are male.
+
+
+```{r marital, fig.cap = "Marital status of respondents",echo = FALSE}
+# marital status
+data %>% 
+  filter(marital_status != "Not stated") %>% 
+  ggplot(aes(x = marital_status)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "marital status",
+       y = "number of respondents") +
+  theme_minimal()
+```
+
+Figure \@ref(fig:marital) shows the marital status distribution of the respondents. Most respondents are married (), followed by single. A fairly high number of respondents are widowed, divorced or separated while being in a common-law relationship is the least preferred.
+
+
+```{r hours, fig.cap = "Distribution of the hours of sleep of respondents",echo = FALSE}
+# group sleep categories, over 9 hours, less than 5 hours 
+# since there are less people in them
+data_sleep <- data %>% 
+  mutate(num_hrs_sleep = ifelse(num_hrs_sleep == "Under 3 hours", "less than 5 hours", num_hrs_sleep),
+         num_hrs_sleep = ifelse(num_hrs_sleep == "3 hours to less than 4 hours", "less than 5 hours", num_hrs_sleep),
+         num_hrs_sleep = ifelse(num_hrs_sleep == "4 hours to less than 5 hours", "less than 5 hours", num_hrs_sleep)) %>% 
+  mutate(num_hrs_sleep = ifelse(num_hrs_sleep == "9 hours to less than 10 hours", "over 9 hours", num_hrs_sleep),
+         num_hrs_sleep = ifelse(num_hrs_sleep == "10 hours to less than 11 hours", "over 9 hours", num_hrs_sleep),
+         num_hrs_sleep = ifelse(num_hrs_sleep == "11 hours to less than 12 hours", "over 9 hours", num_hrs_sleep),
+         num_hrs_sleep = ifelse(num_hrs_sleep == "12 hours or more", "over 9 hours", num_hrs_sleep)) %>% 
+  mutate(num_hrs_sleep = factor(num_hrs_sleep),
+         num_hrs_sleep = fct_relevel(num_hrs_sleep,
+                                     "less than 5 hours",
+                                     "5 hours to less than 6 hours",
+                                     "6 hours to less than 7 hours",
+                                     "7 hours to less than 8 hours",
+                                     "8 hours to less than 9 hours",
+                                     "over 9 hours"))
+
+
+# num sleep
+data_sleep %>% 
+  ggplot(aes(x = num_hrs_sleep)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of hours usually spent sleeping",
+       y = "number of respondents") +
+  coord_flip() +
+  theme_minimal()
+
+num_sleep <- data_sleep %>% 
+  group_by(num_hrs_sleep) %>% 
+  count()
+```
+
+Figure \@ref(fig:hours) shows the number of hours usually spent sleeping. Most respondents tend to sleep between 7 to 8 hours, followed by 6 to 7 hours and 8 to 9 hours. A fairly high number of people sleep more than 9 hours on a regular basis. It is also worthwhile to note that X% usually sleep for less than 5 hours. This suggests that we should take a closer look at the reasons why it is the case.
+
+
+```{r health, fig.cap = "Comparison of the distribution of respondent based on their perceived health for sleeping hours",echo = FALSE}
+# perceived health
+# make as factor
+data_sleep <- data_sleep %>% 
+  mutate(perceived_health = factor(perceived_health),
+         perceived_health = fct_relevel(perceived_health,
+                                        "Excellent",
+                                        "Very good",
+                                        "Good",
+                                        "Fair",
+                                        "Poor",
+                                        "Don't know",
+                                        "Refusal"))
+
+# make the bar graph
+data_sleep %>% 
+  filter(perceived_health != "Refusal") %>% 
+  filter(perceived_health != "Don't know") %>% 
+  ggplot(aes(x = num_hrs_sleep, fill = perceived_health)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of respondents",
+       y = "perceived health") +
+  theme_minimal() +
+  facet_wrap(~perceived_health) +
+  coord_flip()
+```
+
+Figure \@ref(fig:health) illustrates the distribution of the number of hours spent sleeping for different perceived health. For those who perceived their health as "Excellent", "Very Good" and "Good", we observe that the distribution of the number of sleeping hours to be fairly similar with 7 hours to less than 8 hours as the mode. For those who perceived their health as "Fair", the distribution of their sleeping hours seems to be close to uniform. We can see that a higher proportion of respondents answered to have lower sleeping hours. Similarly for those who perceived their health as "Poor", the distribution is almost uniform with most people sleeping less than 5 hours on a regular basis. This suggests that how people perceive their health may have an influence over the number of hours they usually sleep among other factors.
+
+
+
+```{r mental, fig.cap = "Comparison of the distribution of respondents' sleeping hours based on their perceived mental health",echo = FALSE}
+# make as factor
+data_sleep <- data_sleep %>% 
+  mutate(per_mental_health = factor(per_mental_health),
+         per_mental_health = fct_relevel(per_mental_health,
+                                         "Excellent",
+                                         "Very good",
+                                         "Good",
+                                         "Fair",
+                                         "Poor",
+                                         "Don't know",
+                                         "Refusal"))
+
+data_sleep %>% 
+  filter(per_mental_health != "Refusal") %>% 
+  filter(per_mental_health != "Don't know") %>% 
+  ggplot(aes(x = num_hrs_sleep, fill = per_mental_health)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of respondents",
+       y = "perceived mental health") +
+  theme_minimal() +
+  coord_flip() +
+  facet_wrap(~per_mental_health)
+```
+
+Figure \@ref(fig:mental) shows the distribution of the number of hours usually spent sleeping for different perceived mental health. For those who perceived their mental health as "Excellent", "Very Good" and "Good", the distribution of sleeping hours are similar. The higher people perceived their mental health, the lower the proportion of people sleeping too less. For "Fair" and "Poor", the proportion of respondents who reported lower sleeping hours is the highest. Again, the perception of mental health seems to have some effect on the hours spent sleeping.
+
+
+```{r stress, echo = FALSE, warning=FALSE}
+# make as factor and recode levels
+data_sleep <- data_sleep %>% 
+  mutate(per_life_stress = factor(per_life_stress),
+         per_life_stress = fct_relevel(per_life_stress,
+                                       "Extremely stressful",
+                                       "Quite a bit stressful",
+                                       "A bit stressful",
+                                       "Not very stressful",
+                                       "Not at all stressful",
+                                       "Don't know",
+                                       "Refusal"))
+
+# create bar graph
+data_sleep %>% 
+  filter(per_life_stress != "Refusal") %>% 
+  filter(per_life_stress != "Don't know") %>% 
+  ggplot(aes(x = num_hrs_sleep, fill = per_life_stress)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of respondents",
+       y = "perceived life stress") +
+  theme_minimal() +
+  coord_flip() +
+  facet_wrap(~per_life_stress)
+```
+
+Figure \@ref(fig:stress) shows how the number of hours usually spent sleeping is distributed for how the respondents perceived their stress in life. Except for those who feel that life is extremely stressful, the distributions of the number of hours spent sleeping are similar. The less stress people feel, the higher the concentration of people sleeping adequately. The proportion of people sleeping 8 to 9 hours is highest for those who feel life is not at all stressful.
+
+```{r work, fig.cap = "Comparison of the distribution of respondents based on their perceived stress at work",echo = FALSE}
+# make as factor and recode levels
+data_sleep <- data_sleep %>% 
+  mutate(per_stress_work = factor(per_stress_work),
+         per_stress_work = fct_relevel(per_stress_work,
+                                       "Extremely stressful",
+                                       "Quite a bit stressful",
+                                       "A bit stressful",
+                                       "Not very stressful",
+                                       "Not at all stressful",
+                                       "Not stated",
+                                       "Valid skip",
+                                       "Don't know",
+                                       "Refusal"))
+
+# create bar graph
+data_sleep %>% 
+  filter(per_stress_work != "Not stated") %>% 
+  filter(per_stress_work != "Valid skip") %>% 
+  filter(per_stress_work != "Not stated") %>% 
+  filter(per_stress_work != "Refusal") %>% 
+  filter(per_stress_work != "Don't know") %>% 
+  ggplot(aes(x = num_hrs_sleep, fill = per_stress_work)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of hours usually spent sleeping",
+       y = "perceived work stress") +
+  theme_minimal() +
+  coord_flip() +
+  facet_wrap(~per_stress_work)
+```
+
+Figure \@ref(fig:work) shows the comparison of the number of hours of sleep based on perceived work stress. Most people feel that their work is a bit stressful or not very stressful. Regardless of how they feel their work stress, people tend to sleep between 7 to 8 hours of sleep. It seems that work stress does not really have a noticeable effect on the number of hours usually spent sleeping.
+
+
+
+```{r life, fig.cap = "Comparing the number of hours usually spent sleeping against perceived life satisfaction",echo = FALSE}
+# recode life satisfaction
+data_sleep <- data_sleep %>% 
+  mutate(life_satisfaction = ifelse(life_satisfaction == 97, 11, life_satisfaction),
+         life_satisfaction = ifelse(life_satisfaction == 98, 11, life_satisfaction)) %>% 
+  mutate(life_satisfaction = factor(life_satisfaction),
+         life_satisfaction = fct_relevel(life_satisfaction,
+                                         "0",
+                                         "1",
+                                         "2",
+                                         "3",
+                                         "4",
+                                         "5",
+                                         "6",
+                                         "7",
+                                         "8",
+                                         "9",
+                                         "10",
+                                         "11"))
+
+data_sleep %>% 
+  filter(life_satisfaction != "11") %>% 
+  filter(life_satisfaction != "0") %>% 
+  filter(life_satisfaction != "1") %>% 
+  filter(life_satisfaction != "2") %>% 
+  filter(life_satisfaction != "3") %>% 
+  filter(life_satisfaction != "12") %>% 
+  ggplot(aes(x = num_hrs_sleep, 
+             fill = life_satisfaction)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "number of hours usually spent sleeping",
+       y = "number of respondents") +
+  theme_minimal() +
+  coord_flip() +
+  facet_wrap(~life_satisfaction)
+```
+
+Figure \@ref(fig:life) compares the number of hours slept based on life satisfaction. Life satisfaction is on a scale of 0-10, with 0 as being not satisfied at all and 10 as being fully satisfied with their life. Most people reported a 9 or 10 which is great.  
+
+```{r income, fig.cap = "Income groups of respondents",echo =FALSE}
+# 
+data_sleep <- data_sleep %>% 
+  mutate(income = ifelse(is.na(income), "missing", income))
+
+
+# income distribution
+data_sleep %>% 
+  filter(income != "missing") %>% 
+  ggplot(aes(x = income)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "income group",
+       y = "number of respondents") +
+  coord_flip() +
+  theme_minimal()
+```
+
+Figure \@ref(fig:income) shows the income distribution of the CCHS respondents. Most respondents earned between 20,000 dollars to 39,999 dollars, followed by those in the less than $20,000 income group. It is worth to note that most selected respondents in the Health regions are not financially stable. A small number of respondents (700) had no income or income loss; they should consists of mostly of youth. 
 
 
 
 # Model
 
+```{r, echo = FALSE}
+# create a binary response
+# take 1 if sleep well, ie between 7-9 hrs and 0 otherwise
+data_sleep <- data_sleep %>% 
+  mutate(slept_well = ifelse(num_hrs_sleep == "8 hours to less than 9 hours" | num_hrs_sleep == "7 hours to less than 8 hours", 1, 0))
+
+# remove missing/refusal/dont'know/not stated observations
+data_sleep_full <- data_sleep %>% 
+  filter(per_mental_health != "Don't know") %>% 
+  filter(per_mental_health != "Refusal") %>% 
+  filter(income != "missing") %>% 
+  filter(per_life_stress != "Don't know") %>% 
+  filter(per_life_stress != "Refusal") %>% 
+  filter(marital_status != "Not stated")
+```
+
+## Logistic Regression
+
+This study aims to find whether our variables of interest have an effect on sleeping well or not. We are especially interested in the odds of people sleeping well.
+
+We created a binary variable which takes 1 if the respondent reported sleeping between 7 hours to 9 hours and 0 otherwise. We assumed that sleeping well means 7-9 hours of sleep. It will be the dependent variable.
+
+Binary logistic regression was used due to its efficiency and popularity in assessing dichotomous outcomes, providing measures of appropriateness for each predictor as coefficients and indicating the direction of each association, either positive or negative.
+
+The logistic regression model was fitted in R [@citeR] using the lme4 r package [@citelme4]. I fitted different possible models based on the variables of interest and compared the models using the drop-in-deviance test. The drop-in-deviance test is used to test the significance of model coefficients. The null hypothesis for the drop-in-deviance test is that the simple model explains the data as well as the complex model while the alternative hypothesis would be that the complex model explains the data better than the simple model. I used a 5% level of significance which means that if a p-value less than 0.05 is obtained, we have strong evidence supporting the complex model being better.
+
+The final model obtained is as follows:
+
+$$log\ p/(1-p) = \beta_0 + \beta_1age + \beta_2income + \beta_3sex + \beta_4mental\ health + \beta_5life \ stress + \beta_6marital \ status $$
+
+where $log\ p/(1-p)$ represents the log-odds of sleeping well and the $\beta_{i}$ for i = 1 to 6 represents the estimated coefficients of the predictors.
+
+Finally, we performed a goodness of fit test by comparing the residual deviance (68560) to a $\chi^2$ distribution with 50492 degrees f freedom. We found that our model with age, sex, income, mental health, life stress and marital status has statistically significant evidence of lack-of-fit (p < .001). The lack-of-fit could be the result of many reasons, namely: a) missing covariates, b) outliers, or c) over dispersion. 
+
+We still choose to go with the model despite the seemingly lack-of-fit. As the statistician George Box said, all models are wrong, but some are useful. 
+
+```{r, echo=FALSE, results='hide', cache=TRUE}
+# initial models
+model1 <- glm(slept_well ~ 1, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model1)
+
+model2 <- glm(slept_well ~ per_mental_health, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model2)
+
+model3 <- glm(slept_well ~ per_mental_health + sex, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model3)
+
+model4 <- glm(slept_well ~ per_mental_health + sex + age, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model4)
+
+model5 <- glm(slept_well ~ per_mental_health + sex + age + income, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model5)
+
+model6 <- glm(slept_well ~ per_mental_health + sex + age + income + per_life_stress, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model6)
+
+model7 <- glm(slept_well ~ per_mental_health + sex + age + income + per_life_stress + marital_status, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model7)
+```
+
+
+```{r, echo =FALSE}
+# drop-in-deviance test
+test1 <- anova(model1, model2, test = "Chisq")
+# model 2 is better
+test2 <- anova(model2, model3, test = "Chisq")
+# model 3 is better, sex is significant
+test3 <- anova(model3, model4, test = "Chisq")
+# model 4 is better, age is significant
+test4 <- anova(model4, model5, test = "Chisq")
+#model 5 is better, income is significant
+test5 <- anova(model5, model6, test = "Chisq")
+# model 6 is better, perceived life stress is significant
+test6 <- anova(model6, model7, test = "Chisq")
+# model 7 is better, marital status is significant
+```
+
+
+```{r, echo = FALSE, results='hide', cache=TRUE, message=FALSE, warning=FALSE}
+model_final <- glm(slept_well ~ per_mental_health + sex + age + income + per_life_stress + marital_status, family = binomial(link = "logit"), data = data_sleep_full)
+summary(model_final)
+exp(confint(model_final))
+1 - pchisq(68560, 50492)
+```
 
 
 
 # Results
 
+
+```{r coeff, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+# create table showing estimated coeff and their CIs
+est <- summary(model_final)$coeff[,1]
+est <- round(exp(est), 3)
+ci_int <- confint(model_final)
+ci_int <- round(exp(ci_int), 3)
+ci_int <- as_tibble(ci_int)
+label_est <- c("Reference level", "mental health: Very Good", "mental health: Good", "mental health: Fair", "mental health: Poor", "Male", "Age between 18 and 19", "Age between 20 and 24", "Age between 25 and 29", "Age between 30 and 34", "Age between 35 and 39", "Age between 40 and 44", "Age between 45 and 49", "Age between 50 and 54", "Age between 55 and 59", "Age between 60 and 64", "Age between 65 and 69", "Age between 70 and 74", "Age between 75 and 79", "income: $40,000 to $59,999", "income: $60,000 to $79,999", "income: $80,000 or more", "income: less than $20,000", "No income or income loss", "life stress: Quite a bit stressful", "life stress: A  bit stressful", "life stress: Not very stressful", "life stress: Not at all stressful", "Married", "Single", "Widowed/Divorced/Separated")
+table_est <- as_tibble(cbind(label_est, est, ci_int))
+table_est %>% 
+  kable(caption = "MLEs of baseline odds, with 95% confidence intervals",
+  col.names = c("Variables", "Estimated coefficient", "2.5%", "97.5%"),
+  align = c("c", "c", "c", "c")
+)
+```
+
+Table \@ref(tab:coeff) shows the model coefficients with their 95% confidence intervals. The reference group for the model is female, aged 80 and older, common-law relationship, feel life is extremely stressful, perceived their mental health as "Excellent" and with an income of $20,000 to 39,999. 
+
+## Interpretation 
+
+We found that the odds of sleeping well are considerably greater for females compared to males. In addition, 
+
 # Discussion
 
-## First discussion point
+## 
 
 
 ## Second discussion point
