@@ -642,7 +642,7 @@ Extract of the questions from @gebru2021datasheets
 3. *Is there an erratum? If so, please provide a link or other access point.*
 	- No
 4. *Will the dataset be updated (for example, to correct labeling errors, add new instances, delete instances)? If so, please describe how often, by whom, and how updates will be communicated to dataset consumers (for example, mailing list, GitHub)?*
-	- If there is any erro made in the creation of the dataset, it will be updated by Pascal Lee Slew. Any updates will be communicated as a note in the Readme file at the link below:
+	- If there is any error made in the creation of the dataset, it will be updated by Pascal Lee Slew. Any updates will be communicated as a note in the Readme file at the link below:
 	https://github.com/Pascal-304/canadian-sleep-2018#readme
 5. *If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (for example, were the individuals in question told that their data would be retained for a fixed period of time and then deleted)? If so, please describe these limits and explain how they will be enforced.*
 	- N/A
