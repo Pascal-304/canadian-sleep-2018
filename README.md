@@ -11,7 +11,7 @@ This repository examines the factors influencing sleep using data obtained from 
 
 ## Repo Structure
 
-  - 'scripts' includes all the code necessary to simulate data, obtain and clean the data
+  - 'scripts' includes all the code necessary to clean the data
   - 'outputs' contains the files necessary to reproduce the paper. We have the pdf copy of the paper as well as the rmd file needed to reproduce it and a reference bib file containing the references used for the paper
   - 'inputs' contains the datasheet pdf and rmd file which give some information on how the dataset was obtained
   
