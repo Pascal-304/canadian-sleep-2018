@@ -13,7 +13,6 @@
 
 #### Workspace setup ####
 
-library(haven)
 library(tidyverse)
 library(janitor)
 library(readr)
