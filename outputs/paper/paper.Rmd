@@ -1,11 +1,11 @@
 ---
-title: "Investigating Canadian sleeping trends"
-subtitle: ""
+title: "Analysis of the 2018 Canadian Community Health Survey with a focus on sleep"
+subtitle: "Mental health and stress have significant impact on sleep"
 author: 
   - Pascal Lee Slew
 thanks: "Code and data are available at: https://github.com/Pascal-304/canadian-sleep-2018."
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "Sleep has become a luxury in modern times. There is only a limited time for so many things to do. In this paper, we used the 2017-2018 CCHS to focus on the sleeping trends and the factors affecting them. We found that a significant number of canadians have difficulty sleeping. There are also noticeable differences in sleeping hours among age groups which denote potentially some sort of social trend. The analysis of sleeping data is important to get an insight of the current situation and identify ways to help Canadians live a better life. \\par\\textbf{keywords:} sleep, canadian community health survey, sleep deficiency, age"
+abstract: "Sleep has become a luxury in modern times. There are now so many things to do but time is limited. In this paper, we used the 2018 Canadian Community Health Survey to focus on the sleeping trends and the factors affecting them. We found that mental health and stress have significant effect on sleep. Those with better mental health have higher odds of sleeping well. Similarly, how much stress we feel in life is associated with sleep. The analysis of sleeping data is important to get an insight of the current situation and identify ways to help Canadians live a better life. \\par\\textbf{keywords:} sleep, canadian community health survey, sleep deficiency, age, mental health, stress"
 
 
 output:
@@ -25,57 +25,51 @@ library(tidyverse)
 library(kableExtra)
 library(forcats)
 library(lme4)
-library(lmtest)
 ```
 
 
 
 # Introduction
 
-Sleep is important for our health. In today's world, there are so much things we have or want to do but we only have 24 hours a day. Often, people reduce their sleeping hours for other priorities with the belief that the benefits outweigh the costs. This is particularly the case for many university students who are willing to sacrifice their sleep to study or complete assignments. Failing to get enough sleep over time can lead to other health complications. Therefore, having an idea of the current sleep habits of Canadians is important to formulate policies and implement programs to improve the situation of Canadians.  
+Sleep is important for both our physical and mental health. In today's world, there are so much things we have or want to do but we only have 24 hours a day. Often, people reduce their sleeping hours for other priorities with the belief that the benefits outweigh the costs. This is particularly the case for many university students who are willing to sacrifice their sleep to study or complete assignments. Failing to get enough sleep over time can lead to other health complications. Therefore, having an idea of the current sleep habits of Canadians is important to formulate policies and implement programs to improve the situation of Canadians.  
 
-The Canadian Community Health Survey (CCHS) has been set up with the objective of collecting health-related data on Canadians. With the collected data, analysis can be conducted to identify any worrying trends and relay crucial information to the stakeholders. 
+The Canadian Community Health Survey (CCHS), a joint initiative of Health Canada, the Public Health Agency of Canada, Statistics Canada and Canadian Institute for Health Information (CIHI), provides information on a broad range of topics around Canadians health lifestyles since 2000. The CCHS has been set up with the objective of collecting health-related data on Canadians. With the collected data, analysis can be conducted to identify any worrying trends and relay crucial information to the stakeholders. It seeks to draw attention to emerging health issues.
 
-The Canadian Community Health Survey (CCHS), a joint initiative of Health Canada, the Public Health Agency of Canada, Statistics Canada and Canadian Institute for Health Information (CIHI), provides information on a broad range of topics around Canadians health lifestyles. 
+In this paper, we seek to investigate factors affecting the number of hours slept with a particular focus on mental health. We will be looking at the demographics and other factors that have an effect on sleep through visualizations. Then, we used a logistic regression model to gain more insights on the data. We found that mental health and stress are significantly associated with sleep. Better mental health is associated with higher odds of having a good sleep. Similarly, less stress is associated with higher odds of sleeping well.
 
-In this paper, we seek to investigate the sleeping trends of Canadians. We will be looking at the demographics and other factors such as having a baby or drinking first. Then, we will proceed by building a linear mixed model with sleeping hours as the response and age group, baby, diabetes, cholesterol among other predictors. We found that ...
-
-
-
-The remaining part of the paper is divided as follows: Section \@ref(data) explains where our data comes from and gives a general idea of the variables present in the dataset. Section \@ref(model) shows the model that explains how Canadian sleeping is influenced. Section \@ref(results) explains the key findings of the data analysis and model. Section \@ref(discussion) expands on what is found and why it is important. Section \@ref(appendix) contains supplementary graphs that support the arguments in the discussion section.
-
+The remaining part of the paper is divided as follows: Section \@ref(data) provides information on data  collection and an overview of the variables of interest. Section \@ref(model) presents the model used in this paper. Section \@ref(results) explains the results of our model. Section \@ref(discussion) expands on what is found and why it is important. Section \@ref(appendix) contains a datasheet for our dataset.
 
 
 # Data
 
-## Data Source
+## Data Source and Collection
 
-This paper uses a subset of the Canadian Community Health Survey 2017-2018 data [ citation of source].  
+The data was obtained from the Canadian Community Health Survey 2017-2018 (CCHS) [@citesource]. The Canadian Community Health Survey is a cross-sectional survey conducted by Health Canada, the Public Health Agency of Canada, Statistics Canada and the Canadian Institute for Health Information on a national level. Its objectives are to collected health-related data and provide crucial information around Canadian health lifestyle. 
 
- In paper we run our analysis in `R` [@citeR]. 
+The survey was conducted by interviewing individuals aged 12 and over in Canada's ten provinces and territories excluding residents of Indian Reserves and Crown Lands, institutional residents, full-time members of the Canadian Forces, youth living in foster homes and certain remote regions. The CCHS's coverage is about 98% of the Canadian population of age 12 and over. The data was collected 4 times over a period of 3 months. [@citeuser]
+
+The data collected consists of three components: core, theme and optional content. Core content is made up of health-related questions asked of every respondents. Theme content are modules that are introduced to better understand certain areas while optional content are more catered to selected provinces or territories, so should not be generalized across Canada.
+
+## Survey Frame and Sampling Strategy
+
+The survey frame is different for the adults and population under 18. For the adult population, the sampling frame used is the area frame used by the Canadian Labour Force (LFS). It is a two-stage sample design. First, a sample of primary sampling units (PSU) corresponding to geographical regions is selected. Then, for each PSU which is formed of 100 to 600 dwellings, a sample of dwellings is drawn.
+
+For the youth population, a list frame is used to select respondents. The list frame was created from the Canadian Child Benefit (CCB) files which contained address and phone numbers used to conduct phone interviews.
+
+The target sample size for the 2017-2018 CCHS was about 130,000 and the actual number of respondents was 113,290. Each province is split into health regions (HR) and each territory is taken as one HR. In 2018, there was over 100 HRs in the ten provinces. For each health region, a minimum of 500 respondents was required to ensure reasonable data quality. To prevent the sampling of too many dwellings in smaller HRs, sampling was restricted to one out of twenty dwellings. The response rate for the 2018 CHHS was 58.8%.
 
 ## Methodology
 
-The Canadian Community Health Survey is a national-level survey carried out in Canada. It was conducted by 
-
-The survey frame
-respondents eligible for the survey were of age 12 and over in the ten provinces.
-
-The target sample size was about 130,000 respondents to obtain reliable estimates for each Health regions. A minimum of 500 respondents is needed for each HR for attaining a reasonable level of data quality. A restriction of maximum sampling fraction of 1 out of 20 dwellings was imposed to prevent sampling too many dwellings in smaller regions.
-
-The CCHS sample is selected using different frames according to the age group. For the adult population, the sample of households is selected from an area frame while for the young population, a list frame is used to select persons.
-
-The area frame used by the Canadian Labour Force Survey(LFS) is used as a sampling frame for the adult population. It uses a two-stage sample design. In the first stage, a sample of primary sampling units(PSUs), corresponding to geographical regions called clusters, is selected. In each selected PSU, a sample of dwelling is drawn at the second-stage. The clusters are formed of 100 to 600 dwellings generally.
-
-For the youth population, a list frame created from the Canadian Child Benefit (CCB) files is used. The files contain address and phone numbers which are used to conduct phone interviews.
-
-The initial sample size for each frame is collected over a period of 3 months 4 times.
-
+Introductory letters and brochures were sent to selected households to explain the purpose of the CCHS and how the data collected would be used. The CCHS used computer-assisted interviewing applications to collect data. Two options were available: telephone interviews and personal interviews.
 
 
 ## Key features
 
-The dataset used has been 
+The raw data contains a total of 1,051 variables and 113,290 observations. However, there were many missing observations for the number of hours usually spent sleeping which is our main variable of interest. So, we removed the missing values and we were left with a dataset of 55,051 observations.
+
+This report will focus on a subset of variables that will be used to analyze the relationships of the number of hours usually spent sleeping with different variables such as perceived mental health, life satisfaction, and work stress. Table \@ref(tab:data) shows a subset of key variables that will be discussed in this paper.
+
+The dataset was processed and analyzed using R [@citeR] along with the r packages tidyverse [@citetidyverse], janitor [@citejanitor], dplyr [@citedplyr], forcats [@citeforcats] and kableExtra [@citekableExtra].
 
 ```{r, echo = FALSE, message = FALSE}
 # read in data
@@ -100,10 +94,7 @@ data %>%
   kable_styling(latex_options = "scale_down")
 ```
 
-This survey contains a total of 1,051 variables and 113,290 observations.Since the survey has 
-
-This report will focus on a subset of variables that will be used to analyze the relationships of the number of hours usually spent sleeping with different variables such as perceived mental health, life satisfaction, and work stress. Table \@ref(tab:data) shows a subset of key variables that will be discussed in this paper.
-
+### Age and Sex
 
 ```{r agegroup, fig.cap = "Distribution of survey respondents by age group and sex",echo = FALSE}
 # age of respondents
@@ -120,6 +111,8 @@ data %>%
 Figure \@ref(fig:agegroup) shows the age distribution of the respondents. For all age groups, there seems to be a higher number of female adult respondents than male respondents. The converse is true for the youth population; there is higher male respondents than female. About 53.7% of respondents are female and 46.3% are male.
 
 
+### Marital Status
+
 ```{r marital, fig.cap = "Marital status of respondents",echo = FALSE}
 # marital status
 data %>% 
@@ -133,6 +126,9 @@ data %>%
 
 Figure \@ref(fig:marital) shows the marital status distribution of the respondents. Most respondents are married (), followed by single. A fairly high number of respondents are widowed, divorced or separated while being in a common-law relationship is the least preferred.
 
+
+
+### Number of sleeping hours
 
 ```{r hours, fig.cap = "Distribution of the hours of sleep of respondents",echo = FALSE}
 # group sleep categories, over 9 hours, less than 5 hours 
@@ -171,6 +167,29 @@ num_sleep <- data_sleep %>%
 
 Figure \@ref(fig:hours) shows the number of hours usually spent sleeping. Most respondents tend to sleep between 7 to 8 hours, followed by 6 to 7 hours and 8 to 9 hours. A fairly high number of people sleep more than 9 hours on a regular basis. It is also worthwhile to note that X% usually sleep for less than 5 hours. This suggests that we should take a closer look at the reasons why it is the case.
 
+### Income
+
+```{r income, fig.cap = "Income groups of respondents",echo =FALSE}
+# 
+data_sleep <- data_sleep %>% 
+  mutate(income = ifelse(is.na(income), "missing", income))
+
+
+# income distribution
+data_sleep %>% 
+  filter(income != "missing") %>% 
+  ggplot(aes(x = income)) +
+  geom_bar(fill = "lightskyblue") +
+  labs(x = "income group",
+       y = "number of respondents") +
+  coord_flip() +
+  theme_minimal()
+```
+
+Figure \@ref(fig:income) shows the income distribution of the CCHS respondents. Most respondents earned between 20,000 dollars to 39,999 dollars, followed by those in the less than $20,000 income group. It is worth to note that most selected respondents in the Health regions are not financially stable. A small number of respondents (700) had no income or income loss; they should consists of mostly of youth. 
+
+### Perceived Health
+
 
 ```{r health, fig.cap = "Comparison of the distribution of respondent based on their perceived health for sleeping hours",echo = FALSE}
 # perceived health
@@ -201,7 +220,7 @@ data_sleep %>%
 
 Figure \@ref(fig:health) illustrates the distribution of the number of hours spent sleeping for different perceived health. For those who perceived their health as "Excellent", "Very Good" and "Good", we observe that the distribution of the number of sleeping hours to be fairly similar with 7 hours to less than 8 hours as the mode. For those who perceived their health as "Fair", the distribution of their sleeping hours seems to be close to uniform. We can see that a higher proportion of respondents answered to have lower sleeping hours. Similarly for those who perceived their health as "Poor", the distribution is almost uniform with most people sleeping less than 5 hours on a regular basis. This suggests that how people perceive their health may have an influence over the number of hours they usually sleep among other factors.
 
-
+### Perceived Mental Health
 
 ```{r mental, fig.cap = "Comparison of the distribution of respondents' sleeping hours based on their perceived mental health",echo = FALSE}
 # make as factor
@@ -231,7 +250,9 @@ data_sleep %>%
 Figure \@ref(fig:mental) shows the distribution of the number of hours usually spent sleeping for different perceived mental health. For those who perceived their mental health as "Excellent", "Very Good" and "Good", the distribution of sleeping hours are similar. The higher people perceived their mental health, the lower the proportion of people sleeping too less. For "Fair" and "Poor", the proportion of respondents who reported lower sleeping hours is the highest. Again, the perception of mental health seems to have some effect on the hours spent sleeping.
 
 
-```{r stress, echo = FALSE, warning=FALSE}
+### Life Stress
+
+```{r stress, fig.cap = "Comparing the number of hours of sleep across categories of stress in life", echo = FALSE, warning=FALSE}
 # make as factor and recode levels
 data_sleep <- data_sleep %>% 
   mutate(per_life_stress = factor(per_life_stress),
@@ -258,6 +279,9 @@ data_sleep %>%
 ```
 
 Figure \@ref(fig:stress) shows how the number of hours usually spent sleeping is distributed for how the respondents perceived their stress in life. Except for those who feel that life is extremely stressful, the distributions of the number of hours spent sleeping are similar. The less stress people feel, the higher the concentration of people sleeping adequately. The proportion of people sleeping 8 to 9 hours is highest for those who feel life is not at all stressful.
+
+
+### Perceived Stress at Work
 
 ```{r work, fig.cap = "Comparison of the distribution of respondents based on their perceived stress at work",echo = FALSE}
 # make as factor and recode levels
@@ -292,9 +316,9 @@ data_sleep %>%
 
 Figure \@ref(fig:work) shows the comparison of the number of hours of sleep based on perceived work stress. Most people feel that their work is a bit stressful or not very stressful. Regardless of how they feel their work stress, people tend to sleep between 7 to 8 hours of sleep. It seems that work stress does not really have a noticeable effect on the number of hours usually spent sleeping.
 
+### Perceived Life Satisfaction
 
-
-```{r life, fig.cap = "Comparing the number of hours usually spent sleeping against perceived life satisfaction",echo = FALSE}
+```{r life, fig.cap = "Comparing the number of hours usually spent sleeping against perceived life satisfaction",echo = FALSE, warning=FALSE, message=FALSE}
 # recode life satisfaction
 data_sleep <- data_sleep %>% 
   mutate(life_satisfaction = ifelse(life_satisfaction == 97, 11, life_satisfaction),
@@ -333,26 +357,6 @@ data_sleep %>%
 
 Figure \@ref(fig:life) compares the number of hours slept based on life satisfaction. Life satisfaction is on a scale of 0-10, with 0 as being not satisfied at all and 10 as being fully satisfied with their life. Most people reported a 9 or 10 which is great.  
 
-```{r income, fig.cap = "Income groups of respondents",echo =FALSE}
-# 
-data_sleep <- data_sleep %>% 
-  mutate(income = ifelse(is.na(income), "missing", income))
-
-
-# income distribution
-data_sleep %>% 
-  filter(income != "missing") %>% 
-  ggplot(aes(x = income)) +
-  geom_bar(fill = "lightskyblue") +
-  labs(x = "income group",
-       y = "number of respondents") +
-  coord_flip() +
-  theme_minimal()
-```
-
-Figure \@ref(fig:income) shows the income distribution of the CCHS respondents. Most respondents earned between 20,000 dollars to 39,999 dollars, followed by those in the less than $20,000 income group. It is worth to note that most selected respondents in the Health regions are not financially stable. A small number of respondents (700) had no income or income loss; they should consists of mostly of youth. 
-
-
 
 # Model
 
@@ -374,23 +378,31 @@ data_sleep_full <- data_sleep %>%
 
 ## Logistic Regression
 
-This study aims to find whether our variables of interest have an effect on sleeping well or not. We are especially interested in the odds of people sleeping well.
+From the exploratory data analysis and research interest, we are interested in the effect of sex, marital status, age, income, perceived health, perceived mental health, life stress, work stress and life satisfaction on the number of hours spent sleeping. For some of the variables of interest, we have responses such as "Don't know", "Not stated" or "Refusal" for adolescents who did not receive parental approval for the survey; we removed them from the dataset which got narrowed down to 50,523 observations.
 
-We created a binary variable which takes 1 if the respondent reported sleeping between 7 hours to 9 hours and 0 otherwise. We assumed that sleeping well means 7-9 hours of sleep. It will be the dependent variable.
+The number of hours usually spent sleeping, the dependent variable, is a categorical variable, so linear regression or poisson regression would not be appropriate models. 7 hours to 9 hours of sleep regularly is the healthy amount of sleep. [@citesleep]. It is considered an unhealthy habit to sleep too little or too much. Therefore, we assume that sleeping between 7 to 9 hours is considered sleeping "well". Based on that definition, we constructed a binary variable which takes 1 if the respondent reported sleeping between 7 hours to 9 hours and 0 otherwise. This new binary variable will be our dependent variable. The independent variables will be age, sex, marital status, income, perceived health, perceived mental health, perceived life stress, life satisfaction and perceived work stress. 
 
-Binary logistic regression was used due to its efficiency and popularity in assessing dichotomous outcomes, providing measures of appropriateness for each predictor as coefficients and indicating the direction of each association, either positive or negative.
+Logistic regression is used due to its efficiency and popularity in assessing dichotomous outcomes. Since the observations come from different unique respondents, we will assume independence of observations. 
 
-The logistic regression model was fitted in R [@citeR] using the lme4 r package [@citelme4]. I fitted different possible models based on the variables of interest and compared the models using the drop-in-deviance test. The drop-in-deviance test is used to test the significance of model coefficients. The null hypothesis for the drop-in-deviance test is that the simple model explains the data as well as the complex model while the alternative hypothesis would be that the complex model explains the data better than the simple model. I used a 5% level of significance which means that if a p-value less than 0.05 is obtained, we have strong evidence supporting the complex model being better.
+We are interested in the following questions:
+
+  - Does the odds of having a good sleep depend upon whether the respondent is male or female?
+  - Was how people perceived their health and mental health related to them sleeping well or not?
+  - Is having more income associated with having a good sleep, regardless of sex?
+  - Is life satisfaction associated with having good sleep?
+
+The logistic regression model was fitted in R [@citeR] using the lme4 r package [@citelme4]. We fitted different possible models based on the variables of interest and compared the models using the drop-in-deviance test. The drop-in-deviance test is used to test the significance of model coefficients. The null hypothesis for the drop-in-deviance test is that the simple model explains the data as well as the complex model while the alternative hypothesis would be that the complex model explains the data better than the simple model. We used a 5% level of significance which means that if a p-value less than 0.05 is obtained, we have strong evidence supporting the complex model being better. The p-value provides a measure of strength of evidence.
 
 The final model obtained is as follows:
 
 $$log\ p/(1-p) = \beta_0 + \beta_1age + \beta_2income + \beta_3sex + \beta_4mental\ health + \beta_5life \ stress + \beta_6marital \ status $$
 
-where $log\ p/(1-p)$ represents the log-odds of sleeping well and the $\beta_{i}$ for i = 1 to 6 represents the estimated coefficients of the predictors.
+where:
 
-Finally, we performed a goodness of fit test by comparing the residual deviance (68560) to a $\chi^2$ distribution with 50492 degrees f freedom. We found that our model with age, sex, income, mental health, life stress and marital status has statistically significant evidence of lack-of-fit (p < .001). The lack-of-fit could be the result of many reasons, namely: a) missing covariates, b) outliers, or c) over dispersion. 
+  - $log\ p/(1-p)$ represents the log-odds of sleeping well 
+  - $\beta_{i}$ ,for i = 1 to 6, represents the estimated coefficients of the predictors.
 
-We still choose to go with the model despite the seemingly lack-of-fit. As the statistician George Box said, all models are wrong, but some are useful. 
+Finally, we performed a goodness of fit test by comparing the residual deviance (68560) to a $\chi^2$ distribution with 50492 degrees of freedom. We found that our model with age, sex, income, mental health, life stress and marital status has statistically significant evidence of lack-of-fit (p < .001). The lack-of-fit could be the result of many reasons, namely: a) missing covariates, b) outliers, or c) over dispersion. We still choose to go with the model despite the seemingly lack-of-fit. As the statistician George Box said, all models are wrong, but some are useful. We are not trying to get the best possible model but one that we can interpret and provide insights on the data. With this in mind, the interpretation of the model results should not be taken as the only truth, rather as possible insights into the data.
 
 ```{r, echo=FALSE, results='hide', cache=TRUE}
 # initial models
@@ -441,12 +453,10 @@ exp(confint(model_final))
 1 - pchisq(68560, 50492)
 ```
 
-
-
 # Results
 
 
-```{r coeff, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
 # create table showing estimated coeff and their CIs
 est <- summary(model_final)$coeff[,1]
 est <- round(exp(est), 3)
@@ -455,39 +465,193 @@ ci_int <- round(exp(ci_int), 3)
 ci_int <- as_tibble(ci_int)
 label_est <- c("Reference level", "mental health: Very Good", "mental health: Good", "mental health: Fair", "mental health: Poor", "Male", "Age between 18 and 19", "Age between 20 and 24", "Age between 25 and 29", "Age between 30 and 34", "Age between 35 and 39", "Age between 40 and 44", "Age between 45 and 49", "Age between 50 and 54", "Age between 55 and 59", "Age between 60 and 64", "Age between 65 and 69", "Age between 70 and 74", "Age between 75 and 79", "income: $40,000 to $59,999", "income: $60,000 to $79,999", "income: $80,000 or more", "income: less than $20,000", "No income or income loss", "life stress: Quite a bit stressful", "life stress: A  bit stressful", "life stress: Not very stressful", "life stress: Not at all stressful", "Married", "Single", "Widowed/Divorced/Separated")
 table_est <- as_tibble(cbind(label_est, est, ci_int))
-table_est %>% 
-  kable(caption = "MLEs of baseline odds, with 95% confidence intervals",
-  col.names = c("Variables", "Estimated coefficient", "2.5%", "97.5%"),
-  align = c("c", "c", "c", "c")
-)
+
 ```
 
-Table \@ref(tab:coeff) shows the model coefficients with their 95% confidence intervals. The reference group for the model is female, aged 80 and older, common-law relationship, feel life is extremely stressful, perceived their mental health as "Excellent" and with an income of $20,000 to 39,999. 
 
-## Interpretation 
+The reference group for the final model is female, aged 80 and over, with an income of 20,000 to 39,999 dollars, in a common-law relationship who feel life is extremely stressful and perceives her mental health as "Excellent". Since all independent variables are categorical, the results suggest how a change in one of the conditions affects the outcome of interest. The estimated coefficients indicate the effect of identifying in one of the categories.
 
-We found that the odds of sleeping well are considerably greater for females compared to males. In addition, 
+The estimated coefficients and 95% confidence intervals in Table \@ref(tab:model) are exponentiated and indicate the odds rather than the log odds. According to the model, males have 0.853 times higher odds of sleeping a healthy amount of hours compared to females, keeping all other conditions equal. Keeping all else equal, the odds of sleeping between 7 to 9 hours decreases as the perceived mental health get worse. Similarly, for how people feel how stressful their life is, the less stressful they feel about their life, the higher the odds of them sleeping an adequate amount of time, keeping all else constant. For example, the odds of sleeping well for someone not at all stressful about life is 2.494 time higher than someone who feel extremely stressful, keeping all else constant.
+
+With 95% confidence, we may claim that for respondents aged 18 to 19, the odds of having adequate sleep is between 1.450 and 2.011 times higher, keeping all else equal. Another interpretation is with 95% confidence, we may claim that the odds of sleeping enough for those who are married is between 0.846 and 0.946 higher than those in a common-law relationship, keeping all else constant.
+
+ 
+```{r model, echo =FALSE}
+table_est %>% kable(caption = "Summary of Coefficents",
+                    col.names = c("Variables", "Estimated Coefficients", "2.5%", "97.5%"),
+                    align = c("c", "c", "c", "c"))
+```
+
+
+
 
 # Discussion
 
-## 
+## Findings
+
+This paper seeks to provide some insight on the sleeping trends of Canadians. To that end, we use logistic regression to model the data with a binary response which indicate whether someone slept well or not. We have defined sleeping well as having between 7 hours to 9 hours of sleep. We found that life stress and mental health both have significant effect on whether someone sleeps well. As Dr. Michael Wainberg said, sleep and mental health have a bi-directional relationship. [@citecamh] Poor sleep contributes to poor mental health and the converse is also true. 80% of people with mental health problems have possible problems with falling asleep and staying asleep. [@citecamh] The results in Table \@ref(tab:model) indicate similar findings. Those with poor mental health have lower odds of sleeping well compared to those with excellent or very good mental health. The reason for which it is important to investigate such relationship is by identifying the association of the lack of sleep and poor mental health, we can better explain how inadequate sleep raises the risk of mental problems. Lack of sleep is strongly associated with higher odds of frequent mental distress. [@citecdc] Therefore, it may be better to take a closer look at the reasons why people do not sleep enough as possible way to help reduce mental distress.
+
+Similarly, the less stressful people feel in life, the higher the odds of sleeping adequately. This is no surprise since stress is correlated with mental health. Chronic stress can be conducive to mental health problems such as anxiety and depression. [@citemental] This can also be supported by Figure \@ref(fig:stress), most people sleep between 8 to 9 hours, regardless of the amount of stress felt. However, the more stressful people feel, the proportion of people having a lack of sleep increases.
 
 
-## Second discussion point
+## Limitations and weaknesses
 
-## Third discussion point
+The survey questionnaire was subject to a redesign in 2012 and changed in 2015. About 70% of previous content was retained. It is thus not appropriate to compare results with those prior to the redesign. The data is self-reported, so the way one respondent perceive his/her mental health differ. Since mental health is still a sensitive topic, not everybody may be willing to truthfully disclose how they feel their mental health are. Similarly, for other variables which depend on one's own perception, one issue is how do one associate with the categories; it is hard to properly define the categories since everyone may feel differently.
 
-## Weaknesses and next steps
+Since this survey is a cross-sectional one, the time difference in collecting data may cause some difference in responses. One example is if there is an event that make people feel happy in between 2 collection times, the answers to some questions of the survey may be slightly different.
+
+Another weakness is the fact that we have assume that the healthy amount of sleep is between 7 to 9 hours. It is not account for some rare individuals who are fine with less than 6.5 hours of sleep. [@citemyth] Different people may need different amount of sleep. The logistic regression model used showed significant lack of fit but that was the best model we have learned so far. The results should not be interpreted as unquestionnable truth.
+
+This paper has a focus on the effect of mental health on sleep. Our findings along previous studies have indicated that inadequate sleep increases the odds of developing mental problems. Since mental health is a serious issue currently, one possible area we can investigate is the reasons why people do not have enough sleep so as to come up with possible measures to alleviate the situation.
+
 
 
 \newpage
 
 \appendix
 
-# Appendix {-}
+# Appendix
+
+## Datasheet
+
+Extract of the questions from @gebru2021datasheets
 
 
-# Additional details
+**Motivation**
+
+1. *For what purpose was the dataset created? Was there a specific task in mind? Was there a specific gap that needed to be filled? Please provide a description.*
+    - The dataset was created to enable analysis of sleep and variables affecting it. The survey dataset covers a wide range of areas and what we are interested in is only a small subset of it. The dataset is not publicly available.
+2. *Who created the dataset (for example, which team, research group) and on behalf of which entity (for example, company, institution, organization)?*
+    - The dataset was created by Pascal Lee Slew from the University of Toronto.
+3. *Who funded the creation of the dataset? If there is an associated grant, please provide the name of the grantor and the grant name and number.*
+    - No funding was obtained/required for the creation of the dataset.
+4. *Any other comments?*
+    - None
+
+**Composition**
+
+1. *What do the instances that comprise the dataset represent (for example, documents, photos, people, countries)? Are there multiple types of instances (for example, movies, users, and ratings; people and interactions between them; nodes and edges)? Please provide a description.*
+	- The dataset consists of categorical variables and an identifier. It contains 113,290 observations, so 113,290 rows and 18 columns.
+2. *How many instances are there in total (of each type, if appropriate)?*
+	- There are 113,290 rows and 18 columns.
+3. *Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set? If the dataset is a sample, then what is the larger set? Is the sample representative of the larger set (for example, geographic coverage)? If so, please describe how this representativeness was validated/verified. If it is not representative of the larger set, please describe why not (for example, to cover a more diverse range of instances, because instances were withheld or unavailable).*
+	- The dataset contained all the data possible.
+4. *What data does each instance consist of? "Raw" data (for example, unprocessed text or images) or features? In either case, please provide a description.*
+	- The dataset has already been processed from the survey results.
+5. *Is there a label or target associated with each instance? If so, please provide a description.*
+	- No
+6. *Is any information missing from individual instances? If so, please provide a description, explaining why this information is missing (for example, because it was unavailable). This does not include intentionally removed information, but might include, for example, redacted text.*
+	- Yes, some respondents choose to not respond to some questions, leading to some missing data in the data collection process.
+7. *Are relationships between individual instances made explicit (for example, users' movie ratings, social network links)? If so, please describe how these relationships are made explicit.*
+	- No
+8. *Are there recommended data splits (for example, training, development/validation, testing)? If so, please provide a description of these splits, explaining the rationale behind them.*
+	- No
+9. *Are there any errors, sources of noise, or redundancies in the dataset? If so, please provide a description.*
+	- There may be possible sampling error.
+10. *Is the dataset self-contained, or does it link to or otherwise rely on external resources (for example, websites, tweets, other datasets)? If it links to or relies on external resources, a) are there guarantees that they will exist, and remain constant, over time; b) are there official archival versions of the complete dataset (that is, including the external resources as they existed at the time the dataset was created); c) are there any restrictions (for example, licenses, fees) associated with any of the external resources that might apply to a dataset consumer? Please provide descriptions of all external resources and any restrictions associated with them, as well as links or other access points, as appropriate.*
+	- The raw dataset was obtained through UofT CHASS.
+11. *Does the dataset contain data that might be considered confidential (for example, data that is protected by legal privilege or by doctor-patient confidentiality, data that includes the content of individuals' non-public communications)? If so, please provide a description.*
+	- No, the dataset has been processed such that all confidentiality information are suppresses
+12. *Does the dataset contain data that, if viewed directly, might be offensive, insulting, threatening, or might otherwise cause anxiety? If so, please describe why.*
+	- No
+13. *Does the dataset identify any sub-populations (for example, by age, gender)? If so, please describe how these subpopulations are identified and provide a description of their respective distributions within the dataset.*
+	- Yes, for sex, there are 2 categories: male and female. For age, there are multiple age groups of 5 years
+14. *Is it possible to identify individuals (that is, one or more natural persons), either directly or indirectly (that is, in combination with other data) from the dataset? If so, please describe how.*
+	- No
+15. *Does the dataset contain data that might be considered sensitive in any way (for example, data that reveals race or ethnic origins, sexual orientations, religious beliefs, political opinions or union memberships, or locations; financial or health data; biometric or genetic data; forms of government identification, such as social security numbers; criminal history)? If so, please provide a description.*
+	- No
+16. *Any other comments?*
+	- None
+
+**Collection process**
+
+1. *How was the data associated with each instance acquired? Was the data directly observable (for example, raw text, movie ratings), reported by subjects (for example, survey responses), or indirectly inferred/derived from other data (for example, part-of-speech tags, model-based guesses for age or language)? If the data was reported by subjects or indirectly inferred/derived from other data, was the data validated/verified? If so, please describe how.*
+	- No, the raw dataset was created from survey responses in the 2018 CCHS.
+2. *What mechanisms or procedures were used to collect the data (for example, hardware apparatuses or sensors, manual human curation, software programs, software APIs)? How were these mechanisms or procedures validated?*
+	- The survey responses were obtained by filling application using computer-assisted interviewing.
+3. *If the dataset is a sample from a larger set, what was the sampling strategy (for example, deterministic, probabilistic with specific sampling probabilities)?*
+	- The dataset is a  subset of the 2018 CCHS dataset.
+4. *Who was involved in the data collection process (for example, students, crowdworkers, contractors) and how were they compensated (for example, how much were crowdworkers paid)?*
+	- The raw data was collected by trained interviewers.
+5. *Over what timeframe was the data collected? Does this timeframe match the creation timeframe of the data associated with the instances (for example, recent crawl of old news articles)? If not, please describe the timeframe in which the data associated with the instances was created.*
+	- Data was collected over three months period 4 times.
+6. *Were any ethical review processes conducted (for example, by an institutional review board)? If so, please provide a description of these review processes, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- Unknown to the author
+7. *Did you collect the data from the individuals in question directly, or obtain it via third parties or other sources (for example, websites)?*
+	- The raw data was collected directly while the dataset created was a subset of it.
+8. *Were the individuals in question notified about the data collection? If so, please describe (or show with screenshots or other information) how notice was provided, and provide a link or other access point to, or otherwise reproduce, the exact language of the notification itself.*
+	- Yes, the individuals were informed how the information provided would be used.
+9. *Did the individuals in question consent to the collection and use of their data? If so, please describe (or show with screenshots or other information) how consent was requested and provided, and provide a link or other access point to, or otherwise reproduce, the exact language to which the individuals consented.*
+	- Yes, the participants were informed of the purpose of the survey and gave consent to participate in it before collecting data.
+10. *If consent was obtained, were the consenting individuals provided with a mechanism to revoke their consent in the future or for certain uses? If so, please provide a description, as well as a link or other access point to the mechanism (if appropriate).*
+	- Unknown to the author
+11. *Has an analysis of the potential impact of the dataset and its use on data subjects (for example, a data protection impact analysis) been conducted? If so, please provide a description of this analysis, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- N/A
+12. *Any other comments?*
+	- None.
+
+**Preprocessing/cleaning/labeling**
+
+1. *Was any preprocessing/cleaning/labeling of the data done (for example, discretization or bucketing, tokenization, part-of-speech tagging, SIFT feature extraction, removal of instances, processing of missing values)? If so, please provide a description. If not, you may skip the remaining questions in this section.*
+	- Yes, the data was cleaned using the tidyverse [@citetidyverse] and janitor [@citejanitor] r packages.
+2. *Was the "raw" data saved in addition to the preprocessed/cleaned/labeled data (for example, to support unanticipated future uses)? If so, please provide a link or other access point to the "raw" data.*
+	- Yes, but the data is not allowed to be made publicly available. The code used to obtain the dataset can be found at: https://github.com/Pascal-304/canadian-sleep-2018
+3. *Is the software that was used to preprocess/clean/label the data available? If so, please provide a link or other access point.*
+	- Yes, we used R software [@citeR]
+4. *Any other comments?*
+  - None
+
+**Uses**
+
+1. *Has the dataset been used for any tasks already? If so, please provide a description.*
+	- The dataset has been used to conduct an analysis of Canadian sleep. We created graphs and used a logistic regression model.
+2. *Is there a repository that links to any or all papers or systems that use the dataset? If so, please provide a link or other access point.*
+	- The repository containing all files pertaining to the dataset is available at: https://github.com/Pascal-304/canadian-sleep-2018/
+3. *What (other) tasks could the dataset be used for?*
+	- None
+4. *Is there anything about the composition of the dataset or the way it was collected and preprocessed/cleaned/labeled that might impact future uses? For example, is there anything that a dataset consumer might need to know to avoid uses that could result in unfair treatment of individuals or groups (for example, stereotyping, quality of service issues) or other risks or harms (for example, legal risks, financial harms)? If so, please provide a description. Is there anything a dataset consumer could do to mitigate these risks or harms?*
+	- N/A
+5. *Are there tasks for which the dataset should not be used? If so, please provide a description.*
+	- N/A
+6. *Any other comments?*
+	- None
+
+**Distribution**
+
+1. *Will the dataset be distributed to third parties outside of the entity (for example, company, institution, organization) on behalf of which the dataset was created? If so, please provide a description.*
+	- No
+2. *How will the dataset be distributed (for example, tarball on website, API, GitHub)? Does the dataset have a digital object identifier (DOI)?*
+	- No
+3. *When will the dataset be distributed?*
+	- It will not be distributed but the code used to obtain the dataset is already available at: https://github.com/Pascal-304/canadian-sleep-2018/
+4. *Will the dataset be distributed under a copyright or other intellectual property (IP) license, and/or under applicable terms of use (ToU)? If so, please describe this license and/ or ToU, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms or ToU, as well as any fees associated with these restrictions.*
+	- No
+5. *Have any third parties imposed IP-based or other restrictions on the data associated with the instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms, as well as any fees associated with these restrictions.*
+	- Unknown to the author of the dataset
+6. *Do any export controls or other regulatory restrictions apply to the dataset or to individual instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any supporting documentation.*
+	- Unknown to the author of the dataset
+7. *Any other comments?*
+	- None
+
+**Maintenance**
+
+1. *Who will be supporting/hosting/maintaining the dataset?*
+	- Pascal Lee Slew
+2. *How can the owner/curator/manager of the dataset be contacted (for example, email address)?*
+	- If anyone want to reach out to me, you can contact me at pascal.leeslew@mail.utoronto.ca
+3. *Is there an erratum? If so, please provide a link or other access point.*
+	- No
+4. *Will the dataset be updated (for example, to correct labeling errors, add new instances, delete instances)? If so, please describe how often, by whom, and how updates will be communicated to dataset consumers (for example, mailing list, GitHub)?*
+	- If there is any erro made in the creation of the dataset, it will be updated by Pascal Lee Slew. Any updates will be communicated as a note in the Readme file at the link below:
+	https://github.com/Pascal-304/canadian-sleep-2018#readme
+5. *If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (for example, were the individuals in question told that their data would be retained for a fixed period of time and then deleted)? If so, please describe these limits and explain how they will be enforced.*
+	- N/A
+6. *Will older versions of the dataset continue to be supported/hosted/maintained? If so, please describe how. If not, please describe how its obsolescence will be communicated to dataset consumers.*
+	- N/A
+7. *If others want to extend/augment/build on/contribute to the dataset, is there a mechanism for them to do so? If so, please provide a description. Will these contributions be validated/verified? If so, please describe how. If not, why not? Is there a process for communicating/distributing these contributions to dataset consumers? If so, please provide a description.*
+	- N/A
+8. *Any other comments?*
+	- None
 
 
 \newpage
